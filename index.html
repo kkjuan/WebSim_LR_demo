@@ -1,0 +1,186 @@
+<html><head><base href="https://a-i.com/websim/statisticslab/regression/" target="_blank"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Interactive Regression Analysis</title>
+<script src="https://code.highcharts.com/highcharts.js"></script>
+<script src="https://code.highcharts.com/modules/annotations.js"></script>
+<script src="https://code.highcharts.com/modules/exporting.js"></script>
+<script src="https://code.highcharts.com/modules/export-data.js"></script>
+<script src="https://code.highcharts.com/modules/accessibility.js"></script>
+<style>
+body {
+    font-family: Arial, sans-serif;
+    display: flex;
+    margin: 0;
+    padding: 0;
+}
+#controls {
+    width: 250px;
+    padding: 20px;
+    background-color: #f0f0f0;
+    border-right: 1px solid #ccc;
+}
+#controls label {
+    display: block;
+    margin-bottom: 15px;
+}
+#controls input[type="range"] {
+    width: 100%;
+}
+.highcharts-figure {
+    flex-grow: 1;
+    margin: 0;
+    padding: 20px;
+}
+.highcharts-description {
+    margin-top: 20px;
+    text-align: center;
+}
+#container {
+    height: 400px;
+}
+</style>
+</head>
+<body>
+<div id="controls">
+    <h3>Adjust Parameters</h3>
+    <label>Slope (a):
+        <input type="range" id="slope" min="-10" max="10" step="0.1" value="1">
+        <span id="slopeValue">1</span>
+    </label>
+    <label>Number of points (n):
+        <input type="range" id="points" min="100" max="1000" step="10" value="500">
+        <span id="pointsValue">500</span>
+    </label>
+    <label>Noise factor (c):
+        <input type="range" id="noise" min="1" max="300" step="1" value="50">
+        <span id="noiseValue">50</span>
+    </label>
+</div>
+<figure class="highcharts-figure">
+    <div id="container"></div>
+    <p class="highcharts-description">
+        This chart demonstrates an interactive regression analysis. Adjust the parameters on the left to see how they affect the regression line.
+    </p>
+</figure>
+
+<script>
+function generateData(a, n, c) {
+    const data = [];
+    for (let i = 0; i < n; i++) {
+        const x = Math.random() * 200 - 100;
+        const y = a * x + 50 + (Math.random() - 0.5) * 2 * c;
+        data.push([x, y]);
+    }
+    return data;
+}
+
+function linearRegression(data) {
+    let sumX = 0, sumY = 0, sumXY = 0, sumX2 = 0;
+    const n = data.length;
+
+    for (let i = 0; i < n; i++) {
+        sumX += data[i][0];
+        sumY += data[i][1];
+        sumXY += data[i][0] * data[i][1];
+        sumX2 += data[i][0] * data[i][0];
+    }
+
+    const slope = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX);
+    const intercept = (sumY - slope * sumX) / n;
+
+    return { slope, intercept };
+}
+
+function updateChart() {
+    const a = parseFloat(document.getElementById('slope').value);
+    const n = parseInt(document.getElementById('points').value);
+    const c = parseFloat(document.getElementById('noise').value);
+
+    document.getElementById('slopeValue').textContent = a.toFixed(2);
+    document.getElementById('pointsValue').textContent = n;
+    document.getElementById('noiseValue').textContent = c;
+
+    const data = generateData(a, n, c);
+    const regression = linearRegression(data);
+
+    chart.series[0].setData(data);
+    chart.series[1].setData([
+        [-100, regression.slope * -100 + regression.intercept],
+        [100, regression.slope * 100 + regression.intercept]
+    ]);
+
+    chart.setTitle({ text: `Regression Analysis (a=${a.toFixed(2)}, n=${n}, c=${c})` });
+}
+
+const chart = Highcharts.chart('container', {
+    chart: {
+        type: 'scatter',
+        zoomType: 'xy'
+    },
+    title: {
+        text: 'Regression Analysis'
+    },
+    xAxis: {
+        title: {
+            text: 'X'
+        },
+        min: -100,
+        max: 100
+    },
+    yAxis: {
+        title: {
+            text: 'Y'
+        }
+    },
+    legend: {
+        layout: 'vertical',
+        align: 'right',
+        verticalAlign: 'middle'
+    },
+    plotOptions: {
+        scatter: {
+            marker: {
+                radius: 2.5,
+                symbol: 'circle',
+                states: {
+                    hover: {
+                        enabled: true,
+                        lineColor: 'rgb(100,100,100)'
+                    }
+                }
+            },
+            states: {
+                hover: {
+                    marker: {
+                        enabled: false
+                    }
+                }
+            }
+        }
+    },
+    series: [{
+        name: 'Data Points',
+        color: 'rgba(0, 0, 255, 0.3)',
+        data: []
+    }, {
+        name: 'Regression Line',
+        type: 'line',
+        color: 'rgba(255, 0, 0, 0.7)',
+        data: [],
+        marker: {
+            enabled: false
+        },
+        states: {
+            hover: {
+                lineWidth: 0
+            }
+        },
+        enableMouseTracking: false
+    }]
+});
+
+document.getElementById('slope').addEventListener('input', updateChart);
+document.getElementById('points').addEventListener('input', updateChart);
+document.getElementById('noise').addEventListener('input', updateChart);
+
+updateChart();
+</script>
+</body></html>
